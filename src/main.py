@@ -1,5 +1,15 @@
-from src.input import take_input
+from db import create_schema
+from menu import login_menu
+
+
+def init():
+    """
+    This function will be initialized at the initial stage of the application
+    """
+    create_schema()
+
 
 if __name__ == '__main__':
-    ip = take_input()
-    print(ip)
+    init()
+    login_menu()
+
