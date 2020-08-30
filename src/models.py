@@ -8,7 +8,7 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-    user_name = Column(Text, nullable=False)
+    user_name = Column(Text, nullable=False, unique=True)
     password = Column(String(12), nullable=False)
     fullname = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
@@ -42,7 +42,7 @@ class Order(Base):
     discounted_amount = Column(Integer, nullable=False)
     final_amount = Column(Integer, nullable=False)
     created_at = Column(Text, nullable=False)
-    profit_by_oder = Column(Integer, nullable=False)
+    profit_by_order = Column(Integer, nullable=False)
 
     def __init__(self, user, actual_amount_total, discounted_amount, final_amount, created_at, profit_by_oder):
         self.user = user
@@ -50,21 +50,21 @@ class Order(Base):
         self.discounted_amount = discounted_amount
         self.final_amount = final_amount
         self.created_at = created_at
-        self.profit_by_oder = profit_by_oder
+        self.profit_by_order = profit_by_oder
 
     def to_json(self):
         return dict(user=self.user,
                     actual_amount_total=self.actual_amount_total,
                     discounted_amount=self.discounted_amount,
                     final_amount=self.final_amount,
-                    profit_by_oder=self.profit_by_oder,
+                    profit_by_order=self.profit_by_order,
                     created_at=self.created_at)
 
 
 class Category(Base):
     __tablename__ = 'category'
     id = Column(Integer, Sequence('category_id_seq'), primary_key=True)
-    category_name = Column(Text, nullable=False)
+    category_name = Column(Text, nullable=False, unique=True)
     profit = Column(Integer, nullable=False)
     items_sold = Column(Integer, nullable=False)
 
@@ -126,13 +126,20 @@ class ShoppingCart(Base):
     is_bought = Column(Boolean, nullable=False)
     order_id = Column(Integer, ForeignKey("order.id"))
 
-    def __init__(self, user, product, quantity, total_amount, is_bought, order_id):
-        self.user = user
-        self.product = product
-        self.quantity = quantity
-        self.total_amount = total_amount
-        self.is_bought = is_bought
-        self.order_id = order_id
+    def __init__(self, is_update, params):
+        if is_update:
+            self.user = params.get("user")
+            self.product = params.get("product")
+            self.quantity = params.get("quantity")
+            self.total_amount = params.get("total_amount")
+            self.is_bought = params.get("is_bought")
+            self.order_id = params.get("order_id")
+        else:
+            self.user = params.get("user")
+            self.product = params.get("product")
+            self.quantity = params.get("quantity")
+            self.total_amount = params.get("total_amount")
+            self.is_bought = params.get("is_bought")
 
     def to_json(self):
         return dict(user=self.user,
@@ -143,12 +150,109 @@ class ShoppingCart(Base):
                     order_id=self.order_id)
 
 
-login = {
-
+login_options = {
     "heading": "Select User Type",
     "options": [
         "Existing",
         "New User",
         "Exit",
+    ]
+}
+new_user_input = {
+    "heading": "Please provide valid input",
+    "options": [
+        "user_name",
+        "password",
+        "full_name",
+        "email_id",
+        "are_you_a_admin",
+    ]
+}
+existing_user_input = {
+    "heading": "Please provide valid input",
+    "options": [
+        "user_name",
+        "password",
+    ]
+}
+new_user_options = {
+    "heading": "Please select",
+    "options": [
+        "Do you want to continue to application?",
+        "Exit",
+    ]
+}
+user_shopping_menu_options = {
+    "heading": "Welcome to the store",
+    "options": [
+        "Go to categories",
+        "Go to cart",
+        "Go to products which are high in demand",
+        "Exit"
+    ]
+}
+admin_shopping_menu_options = {
+    "heading": "Welcome to the store",
+    "options": [
+        "Add category",
+        "Add products",
+        "Update product stock",
+        "Products in cart",
+        "Total order placed",
+        "Total profit",
+        "Exit"
+    ]
+}
+admin_add_category_menu_options = {
+    "heading": "Add a new Category",
+    "options": [
+        "Category Name",
+        "Previous menu",
+        "Log out",
+        "Exit"
+    ]
+}
+
+admin_add_category_input = {
+    "heading": "Please provide valid input",
+    "options": [
+        "category_name",
+    ]
+}
+user_category_options = {
+    "heading": "Please select any category",
+    "options": []
+}
+admin_cart_options = {
+    "heading": "Please select any category",
+    "options": []
+}
+
+admin_update_product_options = {
+    "heading": "Please select any product",
+    "options": []
+}
+admin_add_product_input = {
+    "heading": "Please provide valid input",
+    "options": [
+        "product_name",
+        "product_details",
+        "buying_price",
+        "selling_price",
+        "remaining_stock",
+    ]
+}
+admin_update_product_input = {
+    "heading": "Please provide valid input",
+    "options": [
+        "buying_price",
+        "selling_price",
+        "remaining_stock",
+    ]
+}
+user_update_product_input = {
+    "heading": "Please provide valid input",
+    "options": [
+        "quantity"
     ]
 }
