@@ -389,3 +389,29 @@ def add_cart(product, params):
         if session is not None:
             session.close()
         return error, response
+
+
+def get_all_products():
+    error = True
+    response = None
+    engine = None
+    Session = None
+    session = None
+
+    try:
+        engine = create_db_engine()
+        Session = sessionmaker(engine)
+        session = Session()
+        product_list = []
+        product_list_from_db = session.query(Product).all()
+        for item in product_list_from_db:
+            product_list.append(item)
+        session.close()
+        error = False
+        response = product_list
+    except Exception as e:
+        response = e.message
+    finally:
+        if session is not None:
+            session.close()
+        return error, response

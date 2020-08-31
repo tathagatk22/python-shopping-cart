@@ -558,4 +558,40 @@ def shopping_menu(user):
                                                             continue
                                                         elif retry == "n" or retry == "N":
                                                             break
+                elif result == 2:
+                    while True:
+                        error, list_of_pending_carts = list_all_carts()
+                        if error:
+                            print("\n\t %s" % list_of_pending_carts)
+                            while True:
+                                # will ask user to retry
+                                retry_getting_input = raw_input(
+                                    "\n\t Do you want to try it again y/n:")
+                                if retry_getting_input == "y" or retry_getting_input == "Y":
+                                    # if the user wants to retry
+                                    break
+                                elif retry_getting_input == "n" or retry_getting_input == "N":
+                                    exit()
+                                else:
+                                    # if the input is incorrect
+                                    continue
+                            # user will prompted again for the details
+                            continue
+                        else:
+                            if len(list_of_pending_carts) == 0:
+                                print ("No shopping carts are available, please add items in cart first")
+                                break
+                            # list of categories has been identified
+                            user_cart_options.update({"options": list_of_pending_carts})
+                            error, response_product = get_all_products()
+                            if error:
+                                pass
+                            else:
+                                user_cart_options.update({"products": response_product})
+                                user_input_for_category = display_with_cart_params_options(user_cart_options)
+                                if user_input_for_category == -1:
+                                    print("\n\t Incorrect Input")
+                                    continue
+                                else:
+                                    pass
         login_menu()

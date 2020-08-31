@@ -227,6 +227,10 @@ admin_cart_options = {
     "heading": "Please select any category",
     "options": []
 }
+user_cart_options = {
+    "heading": "Please select any category",
+    "options": []
+}
 
 admin_update_product_options = {
     "heading": "Please select any product",

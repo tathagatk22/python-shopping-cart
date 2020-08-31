@@ -1,5 +1,7 @@
 import os
 
+from models import ShoppingCart
+
 heading = "SCALEREAL E-COMMERCE STORE"
 
 
@@ -172,3 +174,62 @@ def get_option_by_choice(data, choice):
     """
     options = data.get('options', [])
     return options[choice]
+
+
+def display_with_cart_params_options(params):
+    """
+    This function will be used to display heading and all the options available
+    :param params:
+    :return:
+    """
+    sub_heading = params['heading']
+    options = params['options']
+    while True:
+        clear()
+        print("\n\n")
+        print("################################################################")
+        print("" + adjust_heading(64, heading.replace("", " ").upper()))
+        print("################################################################")
+        new_sub_heading = sub_heading.replace("", " ").upper()
+        print("" + adjust_heading(64, new_sub_heading))
+
+        # Display list of options
+        index = 0
+        flag_for_exit = False
+        total_product_in_cart = 0
+        flag_for_shopping_cart = False
+        for option in options:
+            if isinstance(option, ShoppingCart):
+                flag_for_shopping_cart = True
+                if not option.is_bought:
+                    total_product_in_cart += 1
+        if flag_for_shopping_cart:
+            print("\n\t Total products available in cart are " + str(total_product_in_cart))
+        for option in options:
+            index += 1
+            if isinstance(option, ShoppingCart):
+                products = params.get("products")
+                for product_item in products:
+                    if product_item.id == option.product:
+                        print("\n\t " + str(index) + ". Product Name : " + str(product_item.product_name).title()
+                              + " with price :" + str(product_item.selling_price)
+                              + " and quantity :" + str(option.quantity)
+                              + " and total price :" + str(option.total_amount))
+        index += 1
+        print("\n\t " + str(index) + ". If you want to remove items from cart")
+        index += 1
+        print("\n\t " + str(index) + ". If you want to checkout?")
+        index += 1
+        flag_for_exit = True
+        print("\n\t " + str(0) + ". Exit")
+        # Accept valid choice and return choice value
+        try:
+            if flag_for_exit:
+                choice = int(input("\n\t Enter your choice (1-" + str(index -1) + ") : "))
+                if choice in range(0, index):
+                    print("\n")
+                    break
+        except Exception:
+            return -1
+
+    return choice
