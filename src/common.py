@@ -36,8 +36,19 @@ def display_with_options(params):
         # Display list of options
         index = 0
         flag_for_exit = False
+
+        flag_for_shopping_cart = False
         for option in options:
             index += 1
+            if isinstance(option, ShoppingCart):
+                flag_for_shopping_cart = True
+                products = params.get("products")
+                for product_item in products:
+                    if product_item.id == option.product:
+                        print("\n\t" + str(index) + ". Product Name : " + str(product_item.product_name).title())
+                        print("\n\t   Price :" + str(product_item.selling_price))
+                        print("\n\t   Quantity :" + str(option.quantity))
+                        print("\n\t   Total Price :" + str(option.total_amount))
             if type(option) is dict:
                 if "buying_price" in option:
                     print("\n\t " + str(index) + ". " + str(
@@ -48,6 +59,8 @@ def display_with_options(params):
                 flag_for_exit = True
                 print("\n\t 0. " + option)
             else:
+                if flag_for_shopping_cart:
+                    continue
                 print("\n\t " + str(index) + ". " + str(option).title())
 
         # Accept valid choice and return choice value
@@ -59,7 +72,7 @@ def display_with_options(params):
                     break
             else:
                 choice = int(input("\n\t Enter your choice (1-" + str(index) + ") : "))
-                if choice in range(0, index):
+                if choice in range(1, index + 1):
                     print("\n")
                     break
         except Exception:
@@ -129,17 +142,17 @@ def display_with_update_input(params, update_params):
             input_from_cli = int(input("\n\t Current value for " + item.replace("_", " ") +
                                        " is " + str(update_params.get("selling_price")) + ", what's the new value :"))
             user_input.update({"selling_price": input_from_cli})
-        elif item in "remaining_stock":
+        elif item in "stock_available":
             input_from_cli = int(input("\n\t Current value for " + item.replace("_", " ") +
-                                       " is " + str(update_params.get("remaining_stock")) + ", what's the new value :"))
-            user_input.update({"remaining_stock": input_from_cli})
+                                       " is " + str(update_params.get("stock_available")) + ", what's the new value :"))
+            user_input.update({"stock_available": input_from_cli})
         elif item in "quantity":
             while True:
-                if update_params.get("remaining_stock") > 0:
+                if update_params.get("stock_available") > 0:
                     print("\n\t In how much quantity do you want to purchase, currently available are " +
-                          str(update_params.get("remaining_stock")))
+                          str(update_params.get("stock_available")))
                     input_from_cli = int(input("\n\t Please select the quantity :"))
-                    if input_from_cli < update_params.get("remaining_stock") and input_from_cli != 0:
+                    if input_from_cli <= update_params.get("stock_available") and input_from_cli != 0:
                         user_input.update({"quantity": input_from_cli})
                         break
                     else:
@@ -211,10 +224,12 @@ def display_with_cart_params_options(params):
                 products = params.get("products")
                 for product_item in products:
                     if product_item.id == option.product:
-                        print("\n\t " + str(index) + ". Product Name : " + str(product_item.product_name).title()
-                              + " with price :" + str(product_item.selling_price)
-                              + " and quantity :" + str(option.quantity)
-                              + " and total price :" + str(option.total_amount))
+                        print("\n\t" + str(index) + ". Product Name : " + str(product_item.product_name).title())
+                        print("\n\t   Price :" + str(product_item.selling_price))
+                        print("\n\t   Quantity :" + str(option.quantity))
+                        print("\n\t   Total Price :" + str(option.total_amount))
+        print ("\n\n\n")
+        index = 0
         index += 1
         print("\n\t " + str(index) + ". If you want to remove items from cart")
         index += 1
@@ -225,7 +240,7 @@ def display_with_cart_params_options(params):
         # Accept valid choice and return choice value
         try:
             if flag_for_exit:
-                choice = int(input("\n\t Enter your choice (1-" + str(index -1) + ") : "))
+                choice = int(input("\n\t Enter your choice (1-" + str(index - 1) + ") : "))
                 if choice in range(0, index):
                     print("\n")
                     break

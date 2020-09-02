@@ -310,7 +310,7 @@ def shopping_menu(user):
                                                     break
                 elif result == 4:  # for Products In Cart
                     while True:
-                        error, list_of_pending_carts = list_all_carts()
+                        error, list_of_pending_carts = list_all_carts(user.id, True)
                         if error:
                             print("\n\t %s" % list_of_pending_carts)
                             while True:
@@ -415,6 +415,7 @@ def shopping_menu(user):
                 if result == 0:  # exit
                     exit()
                 elif result == 1:
+                    # Go To Categories
                     while True:
                         error, list_of_categories = list_all_available_categories()
                         if error:
@@ -465,7 +466,21 @@ def shopping_menu(user):
                                     # after getting all the products
                                     if len(response_product_by_category_id) == 0:
                                         print ("No Products are available, please add products first")
-                                        break
+                                        while True:
+                                            retry = raw_input("\n\t Do you want to try it again y/n:")
+                                            if retry == "y" or retry == "Y":
+                                                # if the user wants to retry
+                                                break
+                                            elif retry == "n" or retry == "N":
+                                                break
+                                            else:
+                                                # if the input is incorrect
+                                                continue
+                                        if retry == "y" or retry == "Y":
+                                            # if the user wants to retry
+                                            continue
+                                        elif retry == "n" or retry == "N":
+                                            break
                                     else:
                                         admin_update_product_options.update(
                                             {"options": response_product_by_category_id})
@@ -475,7 +490,7 @@ def shopping_menu(user):
                                             print("\n\t Incorrect Input")
                                             continue
                                         else:
-
+                                            product_id -= 1
                                             error, product_info = get_product_for_update_stock_and_price(
                                                 response_product_by_category_id[product_id - 1])
                                             if error:
@@ -497,7 +512,7 @@ def shopping_menu(user):
                                             else:
                                                 user_input = display_with_update_input(user_update_product_input,
                                                                                        product_info)
-                                                product = response_product_by_category_id[product_id]
+                                                product = response_product_by_category_id[product_id - 1]
                                                 user_input.update({"user": user.id})
                                                 error, response_add_cart = add_cart(product, user_input)
                                                 if error:
@@ -559,8 +574,9 @@ def shopping_menu(user):
                                                         elif retry == "n" or retry == "N":
                                                             break
                 elif result == 2:
+                    # Go To Cart
                     while True:
-                        error, list_of_pending_carts = list_all_carts()
+                        error, list_of_pending_carts = list_all_carts(user.id, True)
                         if error:
                             print("\n\t %s" % list_of_pending_carts)
                             while True:
@@ -587,11 +603,176 @@ def shopping_menu(user):
                             if error:
                                 pass
                             else:
+                                user_cart_options.update({"heading": "Available items in shopping cart"})
                                 user_cart_options.update({"products": response_product})
-                                user_input_for_category = display_with_cart_params_options(user_cart_options)
-                                if user_input_for_category == -1:
+                                user_input_for_category_cart_params_options = display_with_cart_params_options(
+                                    user_cart_options)
+                                if user_input_for_category_cart_params_options == -1:
                                     print("\n\t Incorrect Input")
                                     continue
                                 else:
-                                    pass
+                                    if user_input_for_category_cart_params_options == 1:
+                                        # If user want to remove items from cart
+                                        user_cart_options.update({"heading": "Please select item to remove"})
+                                        user_cart_options.update({"options": list_of_pending_carts})
+                                        remove_item = display_with_options(user_cart_options)
+
+                                        if remove_item == -1:
+                                            pass
+                                        else:
+                                            remove_item -= 1
+                                            item_to_be_removed = list_of_pending_carts[remove_item]
+                                            user_cart_options.update({"heading": "Please provide valid input"})
+                                            user_cart_options.update({"options": [
+                                                "Do you want to remove all of the quantity?",
+                                                "Do you want to remove some of the quantity?",
+                                            ]})
+                                            select_for_all_or_some = display_with_options(user_cart_options)
+                                            if select_for_all_or_some == -1:
+                                                pass
+                                            elif select_for_all_or_some == 1:
+                                                # all of the quantity?
+                                                error, response_remove_from_shopping_cart = remove_from_shopping_cart(
+                                                    item_to_be_removed, 0)
+                                                if error:
+                                                    print("\n\t %s" % response_remove_from_shopping_cart)
+                                                    while True:
+                                                        # will ask user to retry
+                                                        retry_getting_input = raw_input(
+                                                            "\n\t Do you want to try it again y/n:")
+                                                        if retry_getting_input == "y" or retry_getting_input == "Y":
+                                                            # if the user wants to retry
+                                                            break
+                                                        elif retry_getting_input == "n" or retry_getting_input == "N":
+                                                            exit()
+                                                        else:
+                                                            # if the input is incorrect
+                                                            continue
+                                                    # user will prompted again for the details
+                                                    continue
+                                                else:
+                                                    print("\n\t Success!!!!")
+                                                    while True:
+                                                        retry = raw_input("\n\t Do you want to try it again y/n:")
+                                                        if retry == "y" or retry == "Y":
+                                                            # if the user wants to retry
+                                                            break
+                                                        elif retry == "n" or retry == "N":
+                                                            break
+                                                        else:
+                                                            # if the input is incorrect
+                                                            continue
+                                                    if retry == "y" or retry == "Y":
+                                                        # if the user wants to retry
+                                                        continue
+                                                    elif retry == "n" or retry == "N":
+                                                        break
+                                            elif select_for_all_or_some == 2:
+                                                # some of the quantity?
+                                                user_cart_options.update({"heading": "Please provide valid input"})
+                                                user_cart_options.update({"options": [
+                                                    "quantity",
+                                                ]})
+                                                while True:
+                                                    quantity_to_be_removed = display_with_input(user_cart_options)
+                                                    if item_to_be_removed.quantity >= quantity_to_be_removed >= 0:
+                                                        error, response_remove_from_shopping_cart = remove_from_shopping_cart(
+                                                            item_to_be_removed, quantity_to_be_removed)
+                                                        if error:
+                                                            print("\n\t %s" % response_remove_from_shopping_cart)
+                                                            while True:
+                                                                # will ask user to retry
+                                                                retry_getting_input = raw_input(
+                                                                    "\n\t Do you want to try it again y/n:")
+                                                                if retry_getting_input == "y" or retry_getting_input == "Y":
+                                                                    # if the user wants to retry
+                                                                    break
+                                                                elif retry_getting_input == "n" or retry_getting_input == "N":
+                                                                    exit()
+                                                                else:
+                                                                    # if the input is incorrect
+                                                                    continue
+                                                            # user will prompted again for the details
+                                                            continue
+                                                        else:
+                                                            print("\n\t Success!!!!")
+                                                            while True:
+                                                                retry = raw_input(
+                                                                    "\n\t Do you want to try it again y/n:")
+                                                                if retry == "y" or retry == "Y":
+                                                                    # if the user wants to retry
+                                                                    break
+                                                                elif retry == "n" or retry == "N":
+                                                                    break
+                                                                else:
+                                                                    # if the input is incorrect
+                                                                    continue
+                                                            if retry == "y" or retry == "Y":
+                                                                # if the user wants to retry
+                                                                continue
+                                                            elif retry == "n" or retry == "N":
+                                                                break
+                                                    else:
+                                                        # if quantity is less than 0 or greater than cart.quantity
+                                                        print("\n\t Incorrect value found")
+                                                        while True:
+                                                            # will ask user to retry
+                                                            retry_getting_input = raw_input(
+                                                                "\n\t Do you want to try it again y/n:")
+                                                            if retry_getting_input == "y" or retry_getting_input == "Y":
+                                                                # if the user wants to retry
+                                                                break
+                                                            elif retry_getting_input == "n" or retry_getting_input == "N":
+                                                                exit()
+                                                            else:
+                                                                # if the input is incorrect
+                                                                continue
+                                                        # user will prompted again for the details
+                                                        continue
+                                    if user_input_for_category_cart_params_options == 2:
+                                        # If user want to checkout
+                                        pass
+
+                                        error, list_of_pending_carts = list_all_carts(user.id, True)
+                                        if error:
+                                            print("\n\t %s" % list_of_pending_carts)
+                                            while True:
+                                                # will ask user to retry
+                                                retry_getting_input = raw_input(
+                                                    "\n\t Do you want to try it again y/n:")
+                                                if retry_getting_input == "y" or retry_getting_input == "Y":
+                                                    # if the user wants to retry
+                                                    break
+                                                elif retry_getting_input == "n" or retry_getting_input == "N":
+                                                    exit()
+                                                else:
+                                                    # if the input is incorrect
+                                                    continue
+                                            # user will prompted again for the details
+                                            continue
+                                        else:
+                                            if len(list_of_pending_carts) == 0:
+                                                print (
+                                                    "No shopping carts are available, please add items in cart first")
+                                                break
+                                            error, response_add_order = add_order(list_of_pending_carts,user)
+                                            if error:
+                                                print("\n\t %s" % response_add_order)
+                                                while True:
+                                                    # will ask user to retry
+                                                    retry_getting_input = raw_input(
+                                                        "\n\t Do you want to try it again y/n:")
+                                                    if retry_getting_input == "y" or retry_getting_input == "Y":
+                                                        # if the user wants to retry
+                                                        break
+                                                    elif retry_getting_input == "n" or retry_getting_input == "N":
+                                                        exit()
+                                                    else:
+                                                        # if the input is incorrect
+                                                        continue
+                                                # user will prompted again for the details
+                                                continue
+                                            else:
+                                                break
+
         login_menu()

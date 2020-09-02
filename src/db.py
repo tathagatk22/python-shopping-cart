@@ -1,9 +1,11 @@
 import os
+from datetime import datetime
+from time import time
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from models import Base, User, Category, Product, ShoppingCart
+from models import *
 
 DB_Name = None
 DB_User = None
@@ -232,7 +234,7 @@ def get_all_products_by_category_id(category):
         session = Session()
         product_list = []
         product_list_from_db = session.query(Product).filter(
-            Product.category_id == category.get("id", Product.remaining_stock > 0)).all()
+            Product.category_id == category.get("id"), Product.remaining_stock > 0).all()
         for item in product_list_from_db:
             product_list.append({"name": item.product_name, "id": item.id, "stock_available": item.remaining_stock,
                                  "buying_price": item.buying_price, "selling_price": item.selling_price})
@@ -276,7 +278,7 @@ def update_product_price_and_stock(product_id, user_input):
             session.query(Product).filter(Product.id == product_id). \
                 update({Product.buying_price: user_input.get("buying_price"),
                         Product.selling_price: user_input.get("selling_price"),
-                        Product.remaining_stock: user_input.get("remaining_stock")})
+                        Product.remaining_stock: user_input.get("stock_available")})
         session.commit()
         session.close()
         error = False
@@ -299,15 +301,14 @@ def get_product_for_update_stock_and_price(product):
         engine = create_db_engine()
         Session = sessionmaker(engine)
         session = Session()
-        product_info = session.query(Product).filter(Product.id == product.get("id"))
-        product = {}
-        for item in product_info:
-            product.update({"buying_price": item.buying_price,
-                            "selling_price": item.selling_price,
-                            "remaining_stock": item.remaining_stock})
-            session.commit()
-            session.close()
-            error = False
+        product_info = session.query(Product).filter(Product.id == product.get("id")).first()
+        product_from_db = {}
+        product_from_db.update({"buying_price": product_info.buying_price,
+                                "selling_price": product_info.selling_price,
+                                "remaining_stock": product_info.remaining_stock})
+        session.commit()
+        session.close()
+        error = False
         response = product
     except Exception as e:
         response = e.message
@@ -317,7 +318,7 @@ def get_product_for_update_stock_and_price(product):
         return error, response
 
 
-def list_all_carts():
+def list_all_carts(user_id, is_pending):
     error = True
     response = None
     engine = None
@@ -329,7 +330,12 @@ def list_all_carts():
         Session = sessionmaker(engine)
         session = Session()
         cart_list = []
-        cart_list_from_db = session.query(ShoppingCart).all()
+        cart_list_from_db = []
+        if is_pending:
+            cart_list_from_db = session.query(ShoppingCart).filter(ShoppingCart.is_bought == False,
+                                                                   ShoppingCart.user == user_id).all()
+        else:
+            cart_list_from_db = session.query(ShoppingCart).filter(ShoppingCart.user == user_id).all()
         for item in cart_list_from_db:
             cart_list.append(item)
         session.close()
@@ -353,23 +359,6 @@ def add_cart(product, params):
     params.update({"total_amount": total_amount,
                    "product": product.get("id"),
                    "is_bought": False})
-    # self.user = params.get("user")
-    # self.product = params.get("product")
-    # self.quantity = params.get("quantity")
-    # self.total_amount = params.get("total_amount")
-    # self.is_bought = params.get("is_bought")
-
-    # self.user = user
-    # self.product = product
-    # self.quantity = quantity
-    # self.total_amount = total_amount
-    # self.is_bought = is_bought
-    # self.order_id = order_id
-    # product_name = user_input.get("product_name")
-    # product_details = user_input.get("product_details")
-    # buying_price = user_input.get("buying_price")
-    # selling_price = user_input.get("selling_price")
-    # remaining_stock = user_input.get("remaining_stock")
     engine = None
     Session = None
     session = None
@@ -379,7 +368,14 @@ def add_cart(product, params):
         Session = sessionmaker(engine)
         session = Session()
         is_update = False
-        session.add(ShoppingCart(is_update=False, params=params))
+        existing_cart = session.query(ShoppingCart).filter(ShoppingCart.product == product.get("id"),
+                                                           ShoppingCart.is_bought == False).first()
+        if existing_cart:
+            session.query(ShoppingCart).filter(ShoppingCart.id == existing_cart.id).update(
+                {ShoppingCart.quantity: int(params.get("quantity")) + existing_cart.quantity,
+                 ShoppingCart.total_amount: int(params.get("total_amount")) + existing_cart.total_amount})
+        else:
+            session.add(ShoppingCart(is_update=False, params=params))
         session.commit()
         session.close()
         error = False
@@ -409,6 +405,101 @@ def get_all_products():
         session.close()
         error = False
         response = product_list
+    except Exception as e:
+        response = e.message
+    finally:
+        if session is not None:
+            session.close()
+        return error, response
+
+
+def remove_from_shopping_cart(shopping_cart, quantity):
+    """
+        This function will add the credentials signing in the application
+        """
+    error = True
+    response = None
+    engine = None
+    Session = None
+    session = None
+
+    try:
+        engine = create_db_engine()
+        Session = sessionmaker(engine)
+        session = Session()
+        is_update = False
+        if quantity == 0:
+            session.query(ShoppingCart).filter(ShoppingCart.id == shopping_cart.get("id"),
+                                               ShoppingCart.is_bought == False).delete()
+        else:
+            session.query(ShoppingCart).filter(ShoppingCart.id == shopping_cart.get("id"),
+                                               ShoppingCart.is_bought == False).update(
+                {ShoppingCart.quantity: quantity})
+        session.commit()
+        session.close()
+        error = False
+    except Exception as e:
+        response = e.message
+    finally:
+        if session is not None:
+            session.close()
+        return error, response
+
+
+def add_order(shopping_cart_list, user):
+    """
+        This function will add the credentials signing in the application
+        """
+    error = True
+    response = None
+    total_amount_of_order = 0
+    total_items = 0
+    for cart in shopping_cart_list:
+        total_items += cart.quantity
+        total_amount_of_order += cart.total_amount
+
+    actual_amount_of_order = total_amount_of_order
+
+    discounted_amount = total_amount_of_order
+    if total_amount_of_order >= 10000:
+        total_amount_of_order -= 500
+        discounted_amount = total_amount_of_order
+    engine = None
+    Session = None
+    session = None
+
+    try:
+        engine = create_db_engine()
+        Session = sessionmaker(engine)
+        session = Session()
+        order_placed_time = str(datetime.now())
+        session.add(Order(
+            user=user.id,
+            actual_amount_total=actual_amount_of_order,
+            discounted_amount=discounted_amount,
+            final_amount=total_amount_of_order,
+            created_at=order_placed_time))
+        session.commit()
+        order_placed = session.query(Order).filter(Order.created_at == order_placed_time, Order.user == user.id).first()
+        error, response_get_all_products = get_all_products()
+        for product in response_get_all_products:
+            for cart in shopping_cart_list:
+                if cart.product == product.id:
+                    sold_count = product.sold_count + cart.quantity
+
+                    session.query(Product).filter(Product.id == product.id). \
+                        update({Product.sold_count: int(sold_count)})
+
+                    session.query(ShoppingCart).filter(cart.id == ShoppingCart.id). \
+                        update({ShoppingCart.is_bought: True, ShoppingCart.order_id: order_placed.id})
+        user_to_update = session.query(User).filter(User.id == user.id).first()
+        total_items = int(user_to_update.total_item_bought + total_items)
+        session.query(User).filter(User.id == user.id). \
+            update({User.total_item_bought: total_items})
+
+        session.commit()
+        session.close()
+        error = False
     except Exception as e:
         response = e.message
     finally:

@@ -42,22 +42,19 @@ class Order(Base):
     discounted_amount = Column(Integer, nullable=False)
     final_amount = Column(Integer, nullable=False)
     created_at = Column(Text, nullable=False)
-    profit_by_order = Column(Integer, nullable=False)
 
-    def __init__(self, user, actual_amount_total, discounted_amount, final_amount, created_at, profit_by_oder):
+    def __init__(self, user, actual_amount_total, discounted_amount, final_amount, created_at):
         self.user = user
         self.actual_amount_total = actual_amount_total
         self.discounted_amount = discounted_amount
         self.final_amount = final_amount
         self.created_at = created_at
-        self.profit_by_order = profit_by_oder
 
     def to_json(self):
         return dict(user=self.user,
                     actual_amount_total=self.actual_amount_total,
                     discounted_amount=self.discounted_amount,
                     final_amount=self.final_amount,
-                    profit_by_order=self.profit_by_order,
                     created_at=self.created_at)
 
 
@@ -90,10 +87,9 @@ class Product(Base):
     remaining_stock = Column(Integer, nullable=False)
     total_quantity_in_cart = Column(Integer, nullable=False)
     sold_count = Column(Integer, nullable=False)
-    profit = Column(Integer, nullable=False)
 
     def __init__(self, product_name, category_id, product_details, buying_price, selling_price, remaining_stock,
-                 total_quantity_in_cart, sold_count, profit):
+                 total_quantity_in_cart, sold_count):
         self.product_name = product_name
         self.category_id = category_id
         self.product_details = product_details
@@ -102,7 +98,6 @@ class Product(Base):
         self.remaining_stock = remaining_stock
         self.total_quantity_in_cart = total_quantity_in_cart
         self.sold_count = sold_count
-        self.profit = profit
 
     def to_json(self):
         return dict(product_name=self.product_name,
@@ -112,8 +107,7 @@ class Product(Base):
                     selling_price=self.selling_price,
                     remaining_stock=self.remaining_stock,
                     total_quantity_in_cart=self.total_quantity_in_cart,
-                    sold_count=self.sold_count,
-                    profit=self.profit)
+                    sold_count=self.sold_count)
 
 
 class ShoppingCart(Base):
@@ -159,7 +153,7 @@ login_options = {
     ]
 }
 new_user_input = {
-    "heading": "Please provide valid input",
+    "heading": "Please provide credentials",
     "options": [
         "user_name",
         "password",
@@ -169,7 +163,7 @@ new_user_input = {
     ]
 }
 existing_user_input = {
-    "heading": "Please provide valid input",
+    "heading": "Please provide credentials",
     "options": [
         "user_name",
         "password",
