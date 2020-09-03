@@ -13,16 +13,14 @@ class User(Base):
     fullname = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
     is_admin = Column(Boolean, nullable=False)
-    profit = Column(Integer, nullable=False)
     total_item_bought = Column(Integer, nullable=False)
 
-    def __init__(self, user_name, password, fullname, email, is_admin, profit, total_item_bought):
+    def __init__(self, user_name, password, fullname, email, is_admin, total_item_bought):
         self.user_name = user_name
         self.password = password
         self.fullname = fullname
         self.email = email
         self.is_admin = is_admin
-        self.profit = profit
         self.total_item_bought = total_item_bought
 
     def to_json(self):
@@ -30,7 +28,6 @@ class User(Base):
                     user_name=self.user_name,
                     email=self.email,
                     is_admin=self.is_admin,
-                    profit=self.profit,
                     total_item_bought=self.total_item_bought)
 
 
@@ -181,7 +178,6 @@ user_shopping_menu_options = {
     "options": [
         "Go to categories",
         "Go to cart",
-        "Go to products which are high in demand",
         "Exit"
     ]
 }
@@ -193,7 +189,6 @@ admin_shopping_menu_options = {
         "Update product stock",
         "Products in cart",
         "Total order placed",
-        "Total profit",
         "Exit"
     ]
 }
@@ -253,4 +248,12 @@ user_update_product_input = {
     "options": [
         "quantity"
     ]
+}
+admin_user_options = {
+    "heading": "Please select user to view all orders",
+    "options": []
+}
+admin_order_options = {
+    "heading": "All the orders available for the user",
+    "options": []
 }
