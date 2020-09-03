@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from time import time
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -96,7 +95,6 @@ def add_a_new_user(user_input):
             password=password,
             fullname=full_name,
             is_admin=is_admin,
-            profit=0,
             total_item_bought=0))
         session.commit()
         user_list = session.query(User).filter(User.user_name == user_name)
@@ -335,7 +333,7 @@ def list_all_carts(user_id, is_pending):
             cart_list_from_db = session.query(ShoppingCart).filter(ShoppingCart.is_bought == False,
                                                                    ShoppingCart.user == user_id).all()
         else:
-            cart_list_from_db = session.query(ShoppingCart).filter(ShoppingCart.user == user_id).all()
+            cart_list_from_db = session.query(ShoppingCart).all()
         for item in cart_list_from_db:
             cart_list.append(item)
         session.close()
@@ -387,7 +385,7 @@ def add_cart(product, params):
         return error, response
 
 
-def get_all_products():
+def list_all_products():
     error = True
     response = None
     engine = None
@@ -427,14 +425,20 @@ def remove_from_shopping_cart(shopping_cart, quantity):
         engine = create_db_engine()
         Session = sessionmaker(engine)
         session = Session()
-        is_update = False
         if quantity == 0:
-            session.query(ShoppingCart).filter(ShoppingCart.id == shopping_cart.get("id"),
+            session.query(ShoppingCart).filter(ShoppingCart.id == shopping_cart.id,
                                                ShoppingCart.is_bought == False).delete()
         else:
-            session.query(ShoppingCart).filter(ShoppingCart.id == shopping_cart.get("id"),
+            session.query(ShoppingCart).filter(ShoppingCart.id == shopping_cart.id,
                                                ShoppingCart.is_bought == False).update(
                 {ShoppingCart.quantity: quantity})
+
+        product = session.query(Product).filter(Product.id == shopping_cart.product).first()
+        product.remaining_stock += quantity
+        product.total_quantity_in_cart -= quantity
+        session.query(Product).filter(Product.id == product.id).update(
+            {Product.remaining_stock: product.remaining_stock})
+
         session.commit()
         session.close()
         error = False
@@ -481,7 +485,7 @@ def add_order(shopping_cart_list, user):
             created_at=order_placed_time))
         session.commit()
         order_placed = session.query(Order).filter(Order.created_at == order_placed_time, Order.user == user.id).first()
-        error, response_get_all_products = get_all_products()
+        error, response_get_all_products = list_all_products()
         for product in response_get_all_products:
             for cart in shopping_cart_list:
                 if cart.product == product.id:
@@ -500,6 +504,58 @@ def add_order(shopping_cart_list, user):
         session.commit()
         session.close()
         error = False
+    except Exception as e:
+        response = e.message
+    finally:
+        if session is not None:
+            session.close()
+        return error, response
+
+
+def list_all_non_admins():
+    error = True
+    response = None
+    engine = None
+    Session = None
+    session = None
+
+    try:
+        engine = create_db_engine()
+        Session = sessionmaker(engine)
+        session = Session()
+        user_list = []
+        user_list_from_db = session.query(User).filter(User.is_admin == False).all()
+        for item in user_list_from_db:
+            user_list.append(item)
+        session.close()
+        error = False
+        response = user_list
+    except Exception as e:
+        response = e.message
+    finally:
+        if session is not None:
+            session.close()
+        return error, response
+
+
+def list_all_orders(user_id):
+    error = True
+    response = None
+    engine = None
+    Session = None
+    session = None
+
+    try:
+        engine = create_db_engine()
+        Session = sessionmaker(engine)
+        session = Session()
+        order_list = []
+        order_list_from_db = session.query(Order).filter(Order.user == user_id).all()
+        for item in order_list_from_db:
+            order_list.append(item)
+        session.close()
+        error = False
+        response = order_list
     except Exception as e:
         response = e.message
     finally:
